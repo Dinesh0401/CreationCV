@@ -479,3 +479,4 @@ def verify_video(
         errors=errors,
         warnings=warnings,
     )
+

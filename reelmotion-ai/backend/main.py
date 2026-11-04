@@ -23,6 +23,7 @@ from backend.api import (
     models,
     recording,
     rendering,
+    vision,
     websocket,
 )
 from backend.core.config import get_settings
@@ -154,6 +155,7 @@ def create_app() -> FastAPI:
     app.include_router(recording.router)
     app.include_router(rendering.router)
     app.include_router(exports.router)
+    app.include_router(vision.router)
     app.include_router(websocket.router)
 
     @app.get("/", tags=["root"])

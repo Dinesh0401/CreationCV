@@ -434,3 +434,4 @@ class PoseEstimator:
                 cv2.line(vis, pts[p1], pts[p2], color, thickness)
 
         return vis
+

@@ -149,11 +149,15 @@ async def cancel_render(
 ) -> dict[str, str]:
     """Cancel a running or queued render job."""
     job_manager: JobManager = request.app.state.job_manager
-    job = job_manager.cancel_job(job_id)
+    job = job_manager.get_job(job_id)
     if job is None:
+        raise HTTPException(status_code=404, detail="Render job not found")
+
+    cancelled_job = job_manager.cancel_job(job_id)
+    if cancelled_job is None:
         raise HTTPException(
-            status_code=404,
-            detail="Render job not found or already in terminal state",
+            status_code=400,
+            detail=f"Render job cannot be cancelled — already in terminal state '{job.state.value}'",
         )
     return {"message": f"Render job {job_id} cancelled successfully"}
 

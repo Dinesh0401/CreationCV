@@ -275,3 +275,4 @@ async def extract_segmentation(file: UploadFile = File(...)) -> SegmentationResp
         binary_mask_base64=bin_b64,
         alpha_mask_base64=alpha_b64,
     )
+

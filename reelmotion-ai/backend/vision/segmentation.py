@@ -340,3 +340,4 @@ class PersonSegmenter:
         # Inpaint foreground person cutout to reconstruct background
         inpainted = cv2.inpaint(image_bgr, dilated, 5, cv2.INPAINT_TELEA)
         return inpainted
+

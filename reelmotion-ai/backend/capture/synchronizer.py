@@ -223,3 +223,4 @@ class MediaSynchronizer:
             return np.array([], dtype=audio_samples.dtype)
 
         return audio_samples[start_idx:end_idx]
+
