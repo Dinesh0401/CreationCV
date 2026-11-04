@@ -177,8 +177,8 @@ def run_stage3_benchmark():
     )
     pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
     pipe = pipe.to("cuda")
-    pipe.enable_vae_slicing()
-    pipe.enable_vae_tiling()
+    # Keep VAE on CPU in float32 to guarantee 0 MB GPU overhead during decoding
+    pipe.vae = pipe.vae.to("cpu", dtype=torch.float32)
 
     load_time_sec = time.perf_counter() - t_load_start
     print(f"Pipeline successfully loaded and moved to CUDA in {load_time_sec:.2f} s", flush=True)
@@ -206,7 +206,7 @@ def run_stage3_benchmark():
         pose_cond = pose_maps[i]
 
         with torch.inference_mode():
-            # Generate latents on GPU
+            # Generate latents on GPU with UNet + ControlNet
             latents = pipe(
                 prompt=char_prompt,
                 negative_prompt=neg_prompt,
@@ -218,8 +218,9 @@ def run_stage3_benchmark():
                 generator=torch.Generator("cuda").manual_seed(SEED),
             ).images
 
-            # Decode latents with VAE
-            decoded = pipe.vae.decode(latents / pipe.vae.config.scaling_factor, return_dict=False)[0]
+            # Decode latents with VAE on CPU
+            latents_cpu = latents.to("cpu", dtype=torch.float32)
+            decoded = pipe.vae.decode(latents_cpu / pipe.vae.config.scaling_factor, return_dict=False)[0]
             gen_img = pipe.image_processor.postprocess(decoded, output_type="pil")[0]
 
         frame_duration = time.perf_counter() - t_frame_start
