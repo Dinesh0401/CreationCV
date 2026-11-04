@@ -154,6 +154,8 @@ def run_stage3_benchmark():
     segmenter = PersonSegmenter()
     seg_res = segmenter.segment(base_frame)
     isolated_bg = seg_res.background_isolated
+    if isolated_bg is None or isolated_bg.size == 0:
+        isolated_bg = base_frame.copy()
     cv2.imwrite(str(out_base / "isolated_background.png"), isolated_bg)
     print(f"Saved background to {out_base / 'isolated_background.png'}", flush=True)
 
