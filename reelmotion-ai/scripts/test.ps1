@@ -1,49 +1,39 @@
-# =============================================================================
-# ReelMotion AI — Test Script (Windows PowerShell)
-# =============================================================================
-# Runs all automated tests and reports results.
-# Usage: .\scripts\test.ps1
-# =============================================================================
-
+# ReelMotion AI - Test Script
 $ErrorActionPreference = "Continue"
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+Set-Location $ProjectRoot
+
 $VenvPython = Join-Path $ProjectRoot ".venv\Scripts\python.exe"
 
 Write-Host ""
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  ReelMotion AI — Test Suite            " -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "========================================"
+Write-Host "  ReelMotion AI - Test Suite            "
+Write-Host "========================================"
 Write-Host ""
 
-# Check virtual environment
-if (-not (Test-Path $VenvPython)) {
-    Write-Host "ERROR: Virtual environment not found at .venv\" -ForegroundColor Red
-    Write-Host "Run: python -m venv .venv && .venv\Scripts\pip.exe install -e '.[dev]'" -ForegroundColor Yellow
-    exit 1
+$PythonExe = "python"
+if (Test-Path $VenvPython) {
+    $PythonExe = $VenvPython
 }
 
-# Set PYTHONPATH
 $env:PYTHONPATH = $ProjectRoot
 
-# Run backend tests
-Write-Host "[Backend Tests]" -ForegroundColor Yellow
-Write-Host "Running pytest..." -ForegroundColor DarkGray
-Write-Host ""
-
-& $VenvPython -m pytest tests/backend/ -v --tb=short 2>&1 | ForEach-Object { Write-Host $_ }
+Write-Host "[Backend Tests] Running pytest..."
+if ($PythonExe -eq "python") {
+    python -m pytest tests/backend/ -v --tb=short
+} else {
+    & $PythonExe -m pytest tests/backend/ -v --tb=short
+}
 $backendResult = $LASTEXITCODE
 
 Write-Host ""
-Write-Host "========================================" -ForegroundColor Cyan
-
+Write-Host "========================================"
 if ($backendResult -eq 0) {
-    Write-Host "  ALL TESTS PASSED ✓                    " -ForegroundColor Green
+    Write-Host "  ALL TESTS PASSED"
 } else {
-    Write-Host "  SOME TESTS FAILED ✗                   " -ForegroundColor Red
+    Write-Host "  SOME TESTS FAILED"
 }
-
-Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "========================================"
 Write-Host ""
 
 exit $backendResult
-
