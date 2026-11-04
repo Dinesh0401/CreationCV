@@ -221,3 +221,4 @@ if __name__ == "__main__":
     rep = record_physical_camera_and_mic(5.0)
     print("\n=== PHYSICAL CAPTURE VERIFICATION RESULT ===")
     print(json.dumps(rep, indent=2))
+
