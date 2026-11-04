@@ -96,8 +96,8 @@ class VideoExporter:
             by1 = (bg_h - target_h) // 2
             bg_cropped = bg[by1 : by1 + target_h, bx1 : bx1 + target_w]
             bg_blurred = cv2.GaussianBlur(bg_cropped, (75, 75), 25.0)
-            # Darken background slightly to emphasize foreground subject
-            bg_darkened = (bg_blurred.astype(np.float32) * 0.45).astype(np.uint8)
+            # Darken background slightly to emphasize foreground subject without large float32 allocations
+            bg_darkened = cv2.convertScaleAbs(bg_blurred, alpha=0.45)
 
             # Paste foreground in center
             start_x = (target_w - scaled_w) // 2
