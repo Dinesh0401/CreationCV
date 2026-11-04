@@ -123,7 +123,14 @@ class PersonSegmenter:
 
         if self.backend == "mediapipe" and self._segmenter is not None:
             try:
-                return self._segment_mediapipe(image)
+                res = self._segment_mediapipe(image)
+                if res.metadata.has_person:
+                    return res
+                # Fall back to OpenCV GrabCut / morphological if neural segmenter finds no person
+                cv_res = self._segment_opencv(image, bounding_box)
+                if cv_res.metadata.has_person:
+                    return cv_res
+                return res
             except Exception as exc:
                 logger.warning("MediaPipe segmentation failed (%s); falling back to OpenCV.", exc)
                 return self._segment_opencv(image, bounding_box)

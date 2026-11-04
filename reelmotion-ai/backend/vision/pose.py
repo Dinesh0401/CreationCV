@@ -164,7 +164,15 @@ class PoseEstimator:
 
         if self.backend == "mediapipe" and self._landmarker is not None:
             try:
-                return self._estimate_mediapipe(image)
+                res = self._estimate_mediapipe(image)
+                if res.has_pose:
+                    return res
+                # If MediaPipe neural network did not detect human landmarks (e.g. synthetic drawing),
+                # use OpenCV contour/skeleton fallback
+                cv_res = self._estimate_opencv(image)
+                if cv_res.has_pose:
+                    return cv_res
+                return res
             except Exception as exc:
                 logger.warning("MediaPipe inference error (%s); falling back to OpenCV.", exc)
                 return self._estimate_opencv(image)

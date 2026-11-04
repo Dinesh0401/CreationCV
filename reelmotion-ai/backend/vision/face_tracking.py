@@ -136,7 +136,14 @@ class FaceTracker:
 
         if self.backend == "mediapipe" and self._landmarker is not None:
             try:
-                return self._track_mediapipe(image)
+                res = self._track_mediapipe(image)
+                if res.has_face:
+                    return res
+                # Fall back to OpenCV if neural mesh not found (e.g. synthetic drawing)
+                cv_res = self._track_opencv(image)
+                if cv_res.has_face:
+                    return cv_res
+                return res
             except Exception as exc:
                 logger.warning("MediaPipe face inference failed (%s); using OpenCV fallback.", exc)
                 return self._track_opencv(image)
