@@ -1,0 +1,94 @@
+======================================================================
+REELMOTION AI - CUDA & HARDWARE VERIFICATION REPORT
+======================================================================
+Timestamp: 2026-11-04 16:37:47 India Standard Time
+Platform: Windows-10-10.0.26300-SP0
+Python Executable: C:\Users\sjdin\CC\reelmotion-ai\.venv\Scripts\python.exe
+Python Version: 3.10.11
+PyTorch Version: 2.5.1+cu124
+torch.version.cuda: 12.4
+torch.cuda.is_available(): True
+cuDNN Enabled: True
+cuDNN Version: 90100
+
+CUDA Device Count: 1
+Active Device: cuda:0
+GPU Name: NVIDIA GeForce RTX 4050 Laptop GPU
+Compute Capability: 8.9 (Ada Lovelace)
+
+--- VRAM METRICS BEFORE TESTS ---
+Total Dedicated VRAM: 6140.5 MiB (6.00 GiB)
+Initial Free VRAM:    5072.0 MiB (4.95 GiB)
+Initial Used VRAM:    1068.5 MiB (OS / desktop apps)
+
+--- TEST 1: TENSOR ALLOCATION ---
+Created (2000, 2000) float32 tensor on cuda:0: Sum=4000000 in 60.13 ms
+Tensor allocation & cache flush: PASSED
+
+--- TEST 2: FP16 MATRIX MULTIPLICATION (4096 x 4096) ---
+FP16 Matmul (4096 x 4096): Latency=294.14 ms (~467.3 GFLOPS)
+Output shape: torch.Size([4096, 4096]), Mean: -0.00598
+FP16 Matmul test: PASSED
+
+--- TEST 3: CONV2D & BACKWARD PROPAGATION (AUTOGRAD) ---
+Forward + Backward pass (Batch=4, 256x256x3): Latency=426.98 ms
+Loss value: 1.0547
+Conv2d forward + backward pass: PASSED
+
+--- VRAM METRICS DURING TEST ---
+Peak VRAM Allocated by PyTorch: 131.99 MiB (0.129 GiB)
+Peak VRAM Reserved by PyTorch:  220.00 MiB (0.215 GiB)
+Current VRAM Allocated:         17.94 MiB
+Current VRAM Reserved:          220.00 MiB
+
+--- NVIDIA-SMI HARDWARE QUERY ---
+Wed Nov  4 16:37:51 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 591.66                 Driver Version: 591.66         CUDA Version: 13.1     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                  Driver-Model | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4050 ...  WDDM  |   00000000:01:00.0  On |                  N/A |
+| N/A   49C    P3             11W /   60W |    1801MiB /   6141MiB |      8%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A            2052    C+G   ...\CrossDeviceStreamingHost.exe      N/A      |
+|    0   N/A  N/A            3512    C+G   ...\CrossDeviceStreamingHost.exe      N/A      |
+|    0   N/A  N/A            4400    C+G   ...indows\System32\ShellHost.exe      N/A      |
+|    0   N/A  N/A            4528    C+G   ...\CrossDeviceStreamingHost.exe      N/A      |
+|    0   N/A  N/A            4536    C+G   ...Chrome\Application\chrome.exe      N/A      |
+|    0   N/A  N/A            9068    C+G   ...\CrossDeviceStreamingHost.exe      N/A      |
+|    0   N/A  N/A           14204    C+G   ...2txyewy\CrossDeviceResume.exe      N/A      |
+|    0   N/A  N/A           14772    C+G   C:\Windows\explorer.exe               N/A      |
+|    0   N/A  N/A           14928    C+G   ...Telegram Desktop\Telegram.exe      N/A      |
+|    0   N/A  N/A           15004    C+G   ...rvices\BlueStacksServices.exe      N/A      |
+|    0   N/A  N/A           16264    C+G   ..._cw5n1h2txyewy\SearchHost.exe      N/A      |
+|    0   N/A  N/A           16288    C+G   ...y\StartMenuExperienceHost.exe      N/A      |
+|    0   N/A  N/A           17640    C+G   ....0.4314.58\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           18172    C+G   ...\CrossDeviceStreamingHost.exe      N/A      |
+|    0   N/A  N/A           19612    C+G   ...5n1h2txyewy\TextInputHost.exe      N/A      |
+|    0   N/A  N/A           19696    C+G   ...4__8wekyb3d8bbwe\ms-teams.exe      N/A      |
+|    0   N/A  N/A           20496    C+G   ...Chrome\Application\chrome.exe      N/A      |
+|    0   N/A  N/A           22096    C+G   ...\CrossDeviceStreamingHost.exe      N/A      |
+|    0   N/A  N/A           22252    C+G   ...8bbwe\PhoneExperienceHost.exe      N/A      |
+|    0   N/A  N/A           23048      C   ...am Files\Python310\python.exe      N/A      |
+|    0   N/A  N/A           23460    C+G   ...\CrossDeviceStreamingHost.exe      N/A      |
+|    0   N/A  N/A           25240    C+G   ....0.4314.58\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           26144    C+G   ...1g1gvanyjgm\WhatsApp.Root.exe      N/A      |
+|    0   N/A  N/A           26448    C+G   ....0.4314.58\msedgewebview2.exe      N/A      |
+|    0   N/A  N/A           28884    C+G   ...em32\ApplicationFrameHost.exe      N/A      |
+|    0   N/A  N/A           29844    C+G   ...\CrossDeviceStreamingHost.exe      N/A      |
+|    0   N/A  N/A           32136    C+G   ...avity IDE\Antigravity IDE.exe      N/A      |
++-----------------------------------------------------------------------------------------+
+
+======================================================================
+CUDA HARDWARE VERIFICATION RESULT: 100% PASSED (Ada Lovelace RTX 4050)
+======================================================================
