@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse
 from backend import __version__
 from backend.api import (
     characters,
+    exports,
     health,
     models,
     recording,
@@ -152,6 +153,7 @@ def create_app() -> FastAPI:
     app.include_router(characters.router)
     app.include_router(recording.router)
     app.include_router(rendering.router)
+    app.include_router(exports.router)
     app.include_router(websocket.router)
 
     @app.get("/", tags=["root"])

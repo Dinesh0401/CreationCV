@@ -1,8 +1,30 @@
-"""Rendering module — Phase 5+.
+"""Rendering module for ReelMotion AI.
 
-Will contain:
-- FFmpeg-based video composition pipeline
-- Frame compositing (generated character + original background)
-- Audio track handling and lip-sync overlay
-- Export to vertical video formats (9:16)
+Provides:
+- BackgroundCompositor, CompositorConfig
+- AudioMixer, AudioSyncConfig
+- VideoExporter, AspectRatioMode, TARGET_WIDTH, TARGET_HEIGHT
 """
+
+from backend.rendering.audio_mixer import AudioMixer, AudioSyncConfig
+from backend.rendering.background_compositor import (
+    BackgroundCompositor,
+    CompositorConfig,
+)
+from backend.rendering.export import (
+    TARGET_HEIGHT,
+    TARGET_WIDTH,
+    AspectRatioMode,
+    VideoExporter,
+)
+
+__all__ = [
+    "BackgroundCompositor",
+    "CompositorConfig",
+    "AudioMixer",
+    "AudioSyncConfig",
+    "VideoExporter",
+    "AspectRatioMode",
+    "TARGET_WIDTH",
+    "TARGET_HEIGHT",
+]

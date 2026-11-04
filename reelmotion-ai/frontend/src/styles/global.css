@@ -1139,3 +1139,294 @@ input:focus, select:focus, textarea:focus {
   color: var(--text-muted);
   max-width: 360px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Camera Studio & Framing Guide (Phase 2)
+   ═══════════════════════════════════════════════════════════════ */
+
+.camera-studio-container {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+}
+
+.camera-viewport {
+  position: relative;
+  background: #000;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 380px;
+  max-height: 540px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.camera-viewport.portrait-mode {
+  aspect-ratio: 9 / 16;
+  max-height: 580px;
+}
+
+.camera-video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-fast);
+}
+
+.camera-video-element.mirrored {
+  transform: scaleX(-1);
+}
+
+/* 9:16 Portrait Mask Overlay inside standard landscape video */
+.portrait-mask-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.portrait-pillarbox-left,
+.portrait-pillarbox-right {
+  height: 100%;
+  flex: 1;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+}
+
+.portrait-frame-box {
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  position: relative;
+  border: 2px dashed rgba(59, 130, 246, 0.65);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(59, 130, 246, 0.2);
+  transition: border-color var(--transition-fast);
+}
+
+.portrait-frame-box.recording {
+  border-color: rgba(239, 68, 68, 0.85);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.3), inset 0 0 15px rgba(239, 68, 68, 0.2);
+}
+
+/* Corner HUD Brackets */
+.corner-bracket {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: var(--accent);
+  border-style: solid;
+}
+.corner-tl { top: 6px; left: 6px; border-width: 2px 0 0 2px; }
+.corner-tr { top: 6px; right: 6px; border-width: 2px 2px 0 0; }
+.corner-bl { bottom: 6px; left: 6px; border-width: 0 0 2px 2px; }
+.corner-br { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+
+/* Full-body Framing HUD Guide */
+.framing-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 10px;
+  z-index: 6;
+}
+
+.framing-line-group {
+  position: absolute;
+  width: 100%;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.framing-line-head { top: 14%; }
+.framing-line-chest { top: 34%; }
+.framing-line-hands { top: 55%; }
+.framing-line-legs { top: 82%; }
+
+.framing-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.7), transparent);
+}
+
+.framing-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  text-transform: uppercase;
+}
+
+.framing-center-axis {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, transparent, rgba(56, 189, 248, 0.35) 20%, rgba(56, 189, 248, 0.35) 80%, transparent);
+}
+
+.framing-head-oval {
+  position: absolute;
+  top: 6%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24%;
+  height: 18%;
+  border: 1px dashed rgba(56, 189, 248, 0.55);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+}
+
+/* Audio VU Meter */
+.vu-meter-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+}
+
+.vu-meter-bar-outer {
+  flex: 1;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.vu-meter-bar-inner {
+  height: 100%;
+  width: 0%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #22c55e 0%, #22c55e 65%, #eab308 85%, #ef4444 100%);
+  transition: width 60ms ease-out;
+}
+
+.vu-meter-peak {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ffffff;
+  box-shadow: 0 0 4px #fff;
+  transition: left 120ms ease-out;
+}
+
+.vu-meter-value {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  min-width: 45px;
+  text-align: right;
+}
+
+/* Recording HUD Indicators */
+.recording-live-pill {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.9);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  z-index: 10;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+  animation: rec-pulse 1.4s infinite;
+}
+
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.recording-timer-badge {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+/* In-browser Video Player Modal & Portrait Reel View */
+.reel-player-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #000;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  aspect-ratio: 9 / 16;
+  max-height: 520px;
+  margin: 0 auto;
+}
+
+.reel-player-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reel-player-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  max-width: 840px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  position: relative;
+}
