@@ -203,9 +203,9 @@ class PoseEstimator:
                     name=name,
                     x=float(lm.x),
                     y=float(lm.y),
-                    z=float(lm.z) if hasattr(lm, "z") else 0.0,
-                    visibility=float(lm.visibility) if hasattr(lm, "visibility") else 1.0,
-                    presence=float(lm.presence) if hasattr(lm, "presence") else 1.0,
+                    z=float(lm.z) if (hasattr(lm, "z") and lm.z is not None) else 0.0,
+                    visibility=float(lm.visibility) if (hasattr(lm, "visibility") and lm.visibility is not None) else 1.0,
+                    presence=float(lm.presence) if (hasattr(lm, "presence") and lm.presence is not None) else 1.0,
                 )
             )
 

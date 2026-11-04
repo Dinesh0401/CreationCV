@@ -145,6 +145,11 @@ class PersonSegmenter:
             return self._segment_opencv(image)
 
         conf_mask = result.confidence_masks[0].numpy_view()
+        if conf_mask.ndim == 3:
+            conf_mask = conf_mask.squeeze(-1) if conf_mask.shape[-1] == 1 else conf_mask[:, :, 0]
+        if conf_mask.shape[:2] != (h, w):
+            conf_mask = cv2.resize(conf_mask, (w, h))
+
         alpha_mask = np.clip(conf_mask, 0.0, 1.0).astype(np.float32)
         binary_mask = (alpha_mask > 0.5).astype(np.uint8) * 255
 
