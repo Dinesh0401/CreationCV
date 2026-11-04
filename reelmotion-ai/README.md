@@ -8,22 +8,22 @@ Upload character reference images. Record yourself with your webcam. ReelMotion 
 transfers your body movements, facial expressions, and speech to the selected character,
 preserves your original background, and exports a vertical video for social media.
 
-## ✅ Project Status
+## ⚠️ Project Status
 
-**All Phases Complete & Verified**
+**Current Focus: Neural AI Feasibility & Hardware Grounding**
 
 | Phase | Description | Status |
-|-------|-------------|--------|
-| 1 | Project structure, backend, frontend, hardware detection | 🟢 Complete |
-| 2 | Camera + microphone + recording | 🟢 Complete |
-| 3 | Person tracking + segmentation | 🟢 Complete |
-| 4 | Character reference manager | 🟢 Complete |
-| 5 | AI character replacement | 🟢 Complete |
-| 6 | Lip synchronization | 🟢 Complete |
-| 7 | Compositing + background restoration | 🟢 Complete |
-| 8 | 1080×1920 MP4 export | 🟢 Complete |
-| 9 | Testing + validation (74/74 unit tests passing) | 🟢 Complete |
-| 10 | Packaging + documentation | 🟢 Complete |
+|:---:|:---|:---:|
+| 1 | Project structure, backend foundation & APIs | 🟡 Implemented (pending full integration verification) |
+| 2 | Camera + microphone + recording | 🟡 Basic functionality implemented |
+| 3 | Person tracking + segmentation | 🟡 OpenCV fallback active; neural tracking pending |
+| 4 | Character reference manager | 🟡 Basic validation implemented |
+| 5 | AI character replacement (genuine neural model) | 🔴 **NOT IMPLEMENTED as genuine neural generation** |
+| 6 | Lip synchronization (genuine neural model) | 🔴 **NOT IMPLEMENTED as genuine neural lip sync** |
+| 7 | Compositing + background restoration | 🟡 Basic functionality implemented |
+| 8 | 1080×1920 MP4 export | 🟡 Basic functionality implemented |
+| 9 | Testing + validation | 🟡 74 unit tests passing (scaffolding/fallbacks verified) |
+| 10 | Packaging + documentation | 🟡 Prototype stage |
 
 ## Hardware Requirements
 
