@@ -1,0 +1,4 @@
+# AI model weights directory
+# Models are downloaded by the model manager, NOT committed to git.
+# See configs/model_manifest.yaml for the model registry.
+

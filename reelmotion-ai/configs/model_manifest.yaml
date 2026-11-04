@@ -1,0 +1,178 @@
+# ReelMotion AI — Model Manifest
+# ============================================================================
+# This file declares all AI models the application can use.
+# Models are NOT downloaded automatically. Use the model manager to download
+# specific models based on your hardware capabilities.
+#
+# Status values: not_downloaded | downloading | ready | incompatible
+# ============================================================================
+
+models:
+  # --- Person Segmentation ---
+  - id: "birefnet-general"
+    name: "BiRefNet General"
+    purpose: "Person segmentation and background separation"
+    phase: 3
+    repository: "https://huggingface.co/ZhengPeng7/BiRefNet"
+    license: "MIT"
+    license_url: "https://huggingface.co/ZhengPeng7/BiRefNet/blob/main/LICENSE"
+    files:
+      - filename: "model.safetensors"
+        size_mb: 348
+        sha256: ""  # Fill after first verified download
+    min_vram_mb: 2048
+    recommended_vram_mb: 4096
+    supports_cpu: true
+    supports_fp16: true
+    status: "not_downloaded"
+
+  # --- Pose Estimation ---
+  - id: "mediapipe-pose"
+    name: "MediaPipe Pose Landmarker"
+    purpose: "Full-body pose tracking (33 landmarks)"
+    phase: 3
+    repository: "https://developers.google.com/mediapipe/solutions/vision/pose_landmarker"
+    license: "Apache-2.0"
+    license_url: "https://github.com/google-ai-edge/mediapipe/blob/master/LICENSE"
+    files:
+      - filename: "pose_landmarker_heavy.task"
+        size_mb: 30
+        sha256: ""
+    min_vram_mb: 0  # CPU-compatible
+    recommended_vram_mb: 0
+    supports_cpu: true
+    supports_fp16: false
+    status: "not_downloaded"
+
+  - id: "dwpose"
+    name: "DWPose"
+    purpose: "Dense whole-body pose estimation (body + hands + face)"
+    phase: 3
+    repository: "https://github.com/IDEA-Research/DWPose"
+    license: "Apache-2.0"
+    license_url: "https://github.com/IDEA-Research/DWPose/blob/main/LICENSE"
+    files:
+      - filename: "dw-ll_ucoco_384.onnx"
+        size_mb: 260
+        sha256: ""
+    min_vram_mb: 2048
+    recommended_vram_mb: 4096
+    supports_cpu: true
+    supports_fp16: true
+    status: "not_downloaded"
+
+  # --- Face Tracking ---
+  - id: "mediapipe-face"
+    name: "MediaPipe Face Landmarker"
+    purpose: "Facial landmark tracking (478 landmarks)"
+    phase: 3
+    repository: "https://developers.google.com/mediapipe/solutions/vision/face_landmarker"
+    license: "Apache-2.0"
+    license_url: "https://github.com/google-ai-edge/mediapipe/blob/master/LICENSE"
+    files:
+      - filename: "face_landmarker_v2.task"
+        size_mb: 8
+        sha256: ""
+    min_vram_mb: 0
+    recommended_vram_mb: 0
+    supports_cpu: true
+    supports_fp16: false
+    status: "not_downloaded"
+
+  # --- Hand Tracking ---
+  - id: "mediapipe-hands"
+    name: "MediaPipe Hand Landmarker"
+    purpose: "Hand landmark tracking (21 landmarks per hand)"
+    phase: 3
+    repository: "https://developers.google.com/mediapipe/solutions/vision/hand_landmarker"
+    license: "Apache-2.0"
+    license_url: "https://github.com/google-ai-edge/mediapipe/blob/master/LICENSE"
+    files:
+      - filename: "hand_landmarker.task"
+        size_mb: 15
+        sha256: ""
+    min_vram_mb: 0
+    recommended_vram_mb: 0
+    supports_cpu: true
+    supports_fp16: false
+    status: "not_downloaded"
+
+  # --- Character Generation (Phase 5 — evaluate before downloading) ---
+  - id: "wan-animate-14b"
+    name: "Wan 2.2 Animate (14B)"
+    purpose: "Full-body character animation from reference image + motion"
+    phase: 5
+    repository: "https://github.com/Wan-Video/Wan2.2"
+    license: "Apache-2.0"
+    license_url: "https://github.com/Wan-Video/Wan2.2/blob/main/LICENSE"
+    files:
+      - filename: "wan2.2_animate_14b.safetensors"
+        size_mb: 28000
+        sha256: ""
+    min_vram_mb: 12288
+    recommended_vram_mb: 24576
+    supports_cpu: false
+    supports_fp16: true
+    notes: "14B model — likely too large for 6GB VRAM. Evaluate 1.3B variant first."
+    status: "not_downloaded"
+
+  - id: "wan-animate-1.3b"
+    name: "Wan 2.2 Animate (1.3B)"
+    purpose: "Lightweight character animation from reference image + motion"
+    phase: 5
+    repository: "https://github.com/Wan-Video/Wan2.2"
+    license: "Apache-2.0"
+    license_url: "https://github.com/Wan-Video/Wan2.2/blob/main/LICENSE"
+    files:
+      - filename: "wan2.2_animate_1.3b.safetensors"
+        size_mb: 5200
+        sha256: ""
+    min_vram_mb: 4096
+    recommended_vram_mb: 8192
+    supports_cpu: false
+    supports_fp16: true
+    notes: "Smaller variant — potential fit for 6GB VRAM with optimizations."
+    status: "not_downloaded"
+
+  # --- Lip Synchronization (Phase 6) ---
+  - id: "musetalk-1.5"
+    name: "MuseTalk 1.5"
+    purpose: "Audio-driven lip synchronization"
+    phase: 6
+    repository: "https://github.com/TMElyralab/MuseTalk"
+    license: "MIT (code), check third-party model licenses"
+    license_url: "https://github.com/TMElyralab/MuseTalk/blob/main/LICENSE"
+    files:
+      - filename: "musetalk_v15.pth"
+        size_mb: 1500
+        sha256: ""
+    min_vram_mb: 4096
+    recommended_vram_mb: 8192
+    supports_cpu: false
+    supports_fp16: true
+    notes: "Anime-face compatibility must be tested. MIT code license does not cover all bundled models."
+    status: "not_downloaded"
+
+# --- Hardware compatibility presets ---
+hardware_presets:
+  low_vram:  # 4-6 GB
+    max_resolution: 512
+    max_frames: 24
+    preferred_models: ["wan-animate-1.3b", "mediapipe-pose", "mediapipe-face", "birefnet-general"]
+    enable_cpu_offload: true
+    precision: "fp16"
+
+  mid_vram:  # 8-12 GB
+    max_resolution: 768
+    max_frames: 48
+    preferred_models: ["wan-animate-1.3b", "dwpose", "mediapipe-face", "birefnet-general", "musetalk-1.5"]
+    enable_cpu_offload: false
+    precision: "fp16"
+
+  high_vram:  # 16+ GB
+    max_resolution: 1024
+    max_frames: 72
+    preferred_models: ["wan-animate-14b", "dwpose", "mediapipe-face", "birefnet-general", "musetalk-1.5"]
+    enable_cpu_offload: false
+    precision: "fp16"
+

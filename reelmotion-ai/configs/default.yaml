@@ -1,0 +1,59 @@
+# ReelMotion AI — Application Configuration
+# ============================================================================
+# Default configuration values. Override via .env or environment variables.
+# ============================================================================
+
+server:
+  host: "127.0.0.1"
+  port: 8000
+  log_level: "INFO"
+  debug: false
+  cors_origins:
+    - "http://localhost:5173"   # Vite dev server
+    - "http://localhost:3000"
+    - "http://127.0.0.1:5173"
+
+paths:
+  models_dir: "./models"
+  characters_dir: "./characters"
+  recordings_dir: "./recordings"
+  exports_dir: "./exports"
+  logs_dir: "./logs"
+
+capture:
+  default_camera_index: 0
+  default_resolution: [1280, 720]
+  default_fps: 30
+  supported_resolutions:
+    - [640, 480]
+    - [1280, 720]
+    - [1920, 1080]
+
+recording:
+  format: "mp4"
+  video_codec: "h264"
+  audio_codec: "aac"
+  default_bitrate: "8M"
+
+export:
+  width: 1080
+  height: 1920
+  aspect_ratio: "9:16"
+  fps: 30
+  format: "mp4"
+
+hardware:
+  force_cpu: false
+  max_vram_mb: null    # null = auto-detect
+  max_ram_mb: null     # null = auto-detect
+  vram_safety_margin_mb: 512  # Reserve this much VRAM
+  enable_memory_monitoring: true
+  monitoring_interval_seconds: 5
+
+character:
+  accepted_formats: ["png", "jpg", "jpeg", "webp"]
+  max_file_size_mb: 50
+  min_resolution: [256, 256]
+  max_resolution: [4096, 4096]
+  max_references_per_character: 10
+

@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=75.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "reelmotion-ai"
+version = "0.1.0"
+description = "Local-first AI Character Replacement & Reels Recording Studio"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    {name = "ReelMotion AI Team"}
+]
+
+dependencies = [
+    # Web framework
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "websockets>=14.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "python-multipart>=0.0.18",
+    
+    # Computer vision (lightweight — no CUDA required for Phase 1)
+    "opencv-python-headless>=4.10.0",
+    "numpy>=2.0.0",
+    "Pillow>=11.0.0",
+    
+    # System & hardware detection
+    "psutil>=6.1.0",
+    "GPUtil>=1.4.0",
+    
+    # Utilities
+    "pyyaml>=6.0.2",
+    "python-dotenv>=1.0.1",
+    "aiofiles>=24.1.0",
+    "httpx>=0.28.0",
+]
+
+[project.optional-dependencies]
+# Phase 3+: AI inference (install when needed)
+torch-cpu = [
+    "torch>=2.5.0",
+    "torchvision>=0.20.0",
+]
+# Phase 3+: Vision models
+vision = [
+    "mediapipe>=0.10.18",
+]
+# Phase 5+: Generation backends
+generation = [
+    # Added per model evaluation results
+]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.28.0",
+    "ruff>=0.8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "hardware: Tests requiring specific hardware",
+    "slow: Tests that take significant time",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM"]
+

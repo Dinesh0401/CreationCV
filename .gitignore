@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Node
+**/node_modules/
+**/dist/
+**/.vite/
+package-lock.json
+
+# Environment & IDE
+.env
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# AI Models (never commit model weights)
+**/models/*.safetensors
+**/models/*.pth
+**/models/*.pt
+**/models/*.onnx
+**/models/*.bin
+**/models/*.ckpt
+**/models/**/*.safetensors
+**/models/**/*.pth
+
+# Recordings & Exports
+**/recordings/*
+!**/recordings/.gitkeep
+**/exports/*
+!**/exports/.gitkeep
+**/characters/*
+!**/characters/.gitkeep
+
+# Logs & tests
+logs/
+*.log
+.coverage
+htmlcov/
+.pytest_cache/

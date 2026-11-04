@@ -1,0 +1,66 @@
+# Git ignore for ReelMotion AI
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+
+# AI Models (large files — never commit)
+models/*.safetensors
+models/*.pth
+models/*.pt
+models/*.onnx
+models/*.bin
+models/*.ckpt
+models/**/*.safetensors
+models/**/*.pth
+
+# User data
+characters/*/
+recordings/*/
+exports/*/
+
+# Logs
+logs/
+*.log
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Temp
+*.tmp
+*.temp
+scratch/
+
