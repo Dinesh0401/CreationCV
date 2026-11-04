@@ -33,7 +33,7 @@ def generate_phase5_frames():
 
     print("Loading SD 1.5 + ControlNet OpenPose in FP16...", flush=True)
     t0 = time.time()
-    torch.cuda.reset_peak_memory_stats(0)
+    torch.cuda.reset_peak_memory_stats()
 
     controlnet = ControlNetModel.from_pretrained(
         "lllyasviel/control_v11p_sd15_openpose",
@@ -113,9 +113,9 @@ def generate_phase5_frames():
 
         print(f"[{i+1}/{num_frames}] Frame {i} generated in {dur:.2f}s ({20/dur:.1f} it/s)", flush=True)
 
-    peak_alloc = torch.cuda.max_memory_allocated(0) / 1024**2
-    peak_res = torch.cuda.max_memory_reserved(0) / 1024**2
-    free_mem, total_mem = torch.cuda.mem_get_info(0)
+    peak_alloc = torch.cuda.max_memory_allocated() / 1024**2
+    peak_res = torch.cuda.max_memory_reserved() / 1024**2
+    free_mem, total_mem = torch.cuda.mem_get_info()
 
     print("\n--- PERFORMANCE METRICS ---", flush=True)
     print(f"Peak VRAM Allocated: {peak_alloc:.1f} MB ({peak_alloc/1024:.2f} GB)", flush=True)

@@ -14,3 +14,4 @@ config_path = hf_hub_download(
     filename="config.json",
 )
 print(f"Downloaded AnimateDiff motion adapter in {time.time()-t0:.2f}s: {motion_path}", flush=True)
+

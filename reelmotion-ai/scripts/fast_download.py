@@ -69,3 +69,4 @@ with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
 
 print(f"Download completed successfully in {time.time()-t0:.1f}s!", flush=True)
 print(f"Final file size: {target_file.stat().st_size / 1024**2:.1f} MB", flush=True)
+
