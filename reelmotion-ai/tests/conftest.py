@@ -28,3 +28,4 @@ def client(app) -> Generator[TestClient, None, None]:
     """TestClient fixture with app lifespan handled."""
     with TestClient(app) as test_client:
         yield test_client
+

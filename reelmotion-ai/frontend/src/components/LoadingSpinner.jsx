@@ -34,3 +34,4 @@ export default function LoadingSpinner({ message = 'Loading...', size = 'md' }) 
     </div>
   );
 }
+

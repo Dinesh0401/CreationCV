@@ -71,3 +71,4 @@ def test_hardware_failure_fallback_no_gpu():
         assert profile.gpu.detected is False
         assert profile.gpu.name == "No GPU detected"
         assert profile.tier == HardwareTier.CPU_ONLY
+

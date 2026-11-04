@@ -23,3 +23,4 @@ def test_health_endpoint(client: TestClient):
     assert "version" in data
     assert "uptime_seconds" in data
     assert isinstance(data["uptime_seconds"], (int, float))
+

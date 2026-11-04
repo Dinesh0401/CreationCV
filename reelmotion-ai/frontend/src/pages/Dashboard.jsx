@@ -284,3 +284,4 @@ export default function Dashboard({ wsState, liveTelemetry }) {
     </div>
   );
 }
+

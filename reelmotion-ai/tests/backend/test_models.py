@@ -37,3 +37,4 @@ def test_missing_manifest_fallback(tmp_path: Path):
     missing_manifest = tmp_path / "missing_manifest.yaml"
     mgr = ModelManager(manifest_path=missing_manifest)
     assert mgr.list_models() == []
+
