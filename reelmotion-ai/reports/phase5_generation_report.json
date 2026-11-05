@@ -1,0 +1,42 @@
+{
+  "verdict": "GO",
+  "phase": 5,
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "total_vram_mb": 6140.5,
+    "peak_vram_allocated_mb": 3383.7,
+    "peak_vram_allocated_gb": 3.3,
+    "peak_vram_reserved_mb": 4004.0,
+    "peak_vram_reserved_gb": 3.91,
+    "free_vram_remaining_mb": 891.3
+  },
+  "performance": {
+    "resolution": "512x512",
+    "frames_rendered": 8,
+    "steps_per_frame": 20,
+    "avg_frame_latency_sec": 4.56,
+    "iterations_per_second": 4.39,
+    "total_video_generation_sec": 36.49,
+    "model_load_time_sec": 7.84
+  },
+  "models": {
+    "foundation": "runwayml/stable-diffusion-v1-5 (FP16)",
+    "controlnet": "lllyasviel/control_v11p_sd15_openpose (FP16)",
+    "scheduler": "UniPCMultistepScheduler",
+    "pose_tracker": "MediaPipe PoseLandmarker (33 landmarks)",
+    "segmenter": "MediaPipe ImageSegmenter"
+  },
+  "quality_evaluation": {
+    "character_identity_preservation": "High \u2014 fixed-seed latent conditioning maintains identical anime character features, pink hair, and outfit across all frames.",
+    "body_movement_correspondence": "Exact \u2014 anime character's arms, legs, lunging stance, and martial arts pose mirror the real human warrior pose frame-for-frame.",
+    "background_preservation": "Preserved \u2014 original beach, ocean, and sky background isolated and retained behind the character replacement.",
+    "flicker_assessment": "Low-to-moderate \u2014 consistent limbs and geometry; minor clothing texture variations typical of 2D diffusion.",
+    "zero_warping_confirmation": "Zero optical flow or affine warping used. All pixels generated via neural diffusion denoising."
+  },
+  "files": {
+    "comparison_board": "C:\\Users\\sjdin\\CC\\reelmotion-ai\\recordings\\stage3_experiment\\phase5_character_replacement_board.png",
+    "video_export": "C:\\Users\\sjdin\\CC\\reelmotion-ai\\exports\\phase5_ai_character_replacement.mp4",
+    "generated_frames_dir": "C:\\Users\\sjdin\\CC\\reelmotion-ai\\recordings\\stage3_experiment\\generated_frames",
+    "composite_frames_dir": "C:\\Users\\sjdin\\CC\\reelmotion-ai\\recordings\\stage3_experiment\\composite_frames"
+  }
+}
