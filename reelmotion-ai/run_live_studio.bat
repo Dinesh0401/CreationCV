@@ -8,3 +8,4 @@ cd /d "%~dp0"
 set PYTHONPATH=%~dp0
 .venv\Scripts\python.exe scripts\live_camera_studio.py
 pause
+
