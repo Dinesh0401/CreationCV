@@ -124,9 +124,9 @@ class PersonSegmenter:
         if self.backend == "mediapipe" and self._segmenter is not None:
             try:
                 res = self._segment_mediapipe(image)
-                if res.metadata.has_person:
+                if res.metadata.has_person or bounding_box is None:
                     return res
-                # Fall back to OpenCV GrabCut / morphological if neural segmenter finds no person
+                # Only fall back to OpenCV if an explicit bounding box was passed and mediapipe missed it
                 cv_res = self._segment_opencv(image, bounding_box)
                 if cv_res.metadata.has_person:
                     return cv_res
@@ -229,28 +229,48 @@ class PersonSegmenter:
         rw = max(10, min(rw, w - rx - 1))
         rh = max(10, min(rh, h - ry - 1))
 
-        # 3. Fast GrabCut or threshold refinement
-        mask_grab = np.zeros((h, w), dtype=np.uint8)
-        mask_grab.fill(cv2.GC_BGD)
-        # Probable foreground inside rect
-        mask_grab[ry : ry + rh, rx : rx + rw] = cv2.GC_PR_FGD
-        # Certain foreground in center of ROI
-        center_y = ry + int(rh * 0.2)
-        center_h = int(rh * 0.6)
-        center_x = rx + int(rw * 0.25)
-        center_w = int(rw * 0.5)
-        mask_grab[center_y : center_y + center_h, center_x : center_x + center_w] = cv2.GC_FGD
-
-        try:
-            bgd_model = np.zeros((1, 65), np.float64)
-            fgd_model = np.zeros((1, 65), np.float64)
-            rect = (rx, ry, rw, rh)
-            cv2.grabCut(bgr, mask_grab, rect, bgd_model, fgd_model, 2, cv2.GC_INIT_WITH_MASK)
-            binary_mask = np.where((mask_grab == cv2.GC_FGD) | (mask_grab == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
-        except Exception:
-            # Fallback to thresholding if GrabCut fails on uniform regions
-            binary_mask = np.zeros((h, w), dtype=np.uint8)
-            binary_mask[ry : ry + rh, rx : rx + rw] = 255
+        # 3. Fast GrabCut or threshold refinement (downscaled for real-time responsiveness)
+        max_dim = max(h, w)
+        if max_dim > 320:
+            scale = 320.0 / max_dim
+            sw, sh = max(1, int(w * scale)), max(1, int(h * scale))
+            small_bgr = cv2.resize(bgr, (sw, sh), interpolation=cv2.INTER_AREA)
+            s_rx, s_ry = int(rx * scale), int(ry * scale)
+            s_rw, s_rh = max(4, int(rw * scale)), max(4, int(rh * scale))
+            s_mask = np.zeros((sh, sw), dtype=np.uint8)
+            s_mask.fill(cv2.GC_BGD)
+            s_mask[s_ry : s_ry + s_rh, s_rx : s_rx + s_rw] = cv2.GC_PR_FGD
+            s_cy = s_ry + int(s_rh * 0.2)
+            s_ch = int(s_rh * 0.6)
+            s_cx = s_rx + int(s_rw * 0.25)
+            s_cw = int(s_rw * 0.5)
+            s_mask[s_cy : s_cy + s_ch, s_cx : s_cx + s_cw] = cv2.GC_FGD
+            try:
+                bgd_model = np.zeros((1, 65), np.float64)
+                fgd_model = np.zeros((1, 65), np.float64)
+                cv2.grabCut(small_bgr, s_mask, (s_rx, s_ry, s_rw, s_rh), bgd_model, fgd_model, 1, cv2.GC_INIT_WITH_MASK)
+                s_bin = np.where((s_mask == cv2.GC_FGD) | (s_mask == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
+                binary_mask = cv2.resize(s_bin, (w, h), interpolation=cv2.INTER_NEAREST)
+            except Exception:
+                binary_mask = np.zeros((h, w), dtype=np.uint8)
+                binary_mask[ry : ry + rh, rx : rx + rw] = 255
+        else:
+            mask_grab = np.zeros((h, w), dtype=np.uint8)
+            mask_grab.fill(cv2.GC_BGD)
+            mask_grab[ry : ry + rh, rx : rx + rw] = cv2.GC_PR_FGD
+            center_y = ry + int(rh * 0.2)
+            center_h = int(rh * 0.6)
+            center_x = rx + int(rw * 0.25)
+            center_w = int(rw * 0.5)
+            mask_grab[center_y : center_y + center_h, center_x : center_x + center_w] = cv2.GC_FGD
+            try:
+                bgd_model = np.zeros((1, 65), np.float64)
+                fgd_model = np.zeros((1, 65), np.float64)
+                cv2.grabCut(bgr, mask_grab, (rx, ry, rw, rh), bgd_model, fgd_model, 1, cv2.GC_INIT_WITH_MASK)
+                binary_mask = np.where((mask_grab == cv2.GC_FGD) | (mask_grab == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
+            except Exception:
+                binary_mask = np.zeros((h, w), dtype=np.uint8)
+                binary_mask[ry : ry + rh, rx : rx + rw] = 255
 
         # Morphological cleanup
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))

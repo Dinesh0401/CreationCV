@@ -16,7 +16,7 @@ target_dir.mkdir(parents=True, exist_ok=True)
 target_file = target_dir / "model.safetensors"
 part_file = target_dir / "model.safetensors.part"
 
-url = "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors"
+url = "https://hf-mirror.com/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors"
 print(f"Direct downloading {url} to {target_file}...", flush=True)
 
 headers = {}

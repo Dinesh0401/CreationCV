@@ -13,7 +13,7 @@ from typing import AsyncGenerator
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from backend import __version__
 from backend.api import (
@@ -166,8 +166,14 @@ def create_app() -> FastAPI:
                 "version": __version__,
                 "status": "online",
                 "docs_url": "/docs",
+                "live_url": "/live",
             }
         )
+
+    @app.get("/live", tags=["vision"], response_class=HTMLResponse)
+    async def live():
+        from backend.api.vision import live_viewer_page
+        return HTMLResponse(content=live_viewer_page())
 
     return app
 
