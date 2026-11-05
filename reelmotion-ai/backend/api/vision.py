@@ -9,6 +9,7 @@ from __future__ import annotations
 import base64
 import logging
 import time
+from pathlib import Path
 from typing import Annotated
 
 import cv2
@@ -278,26 +279,79 @@ async def extract_segmentation(file: UploadFile = File(...)) -> SegmentationResp
     )
 
 
+def _overlay_rgba(
+    background: np.ndarray,
+    foreground_rgba: np.ndarray,
+    x: int,
+    y: int,
+    opacity: float = 1.0,
+) -> np.ndarray:
+    """Alpha-composite an RGBA foreground image onto a BGR background image."""
+    bh, bw = background.shape[:2]
+    fh, fw = foreground_rgba.shape[:2]
+
+    x1, y1 = max(0, x), max(0, y)
+    x2, y2 = min(bw, x + fw), min(bh, y + fh)
+
+    fx1, fy1 = max(0, -x), max(0, -y)
+    fx2, fy2 = fx1 + (x2 - x1), fy1 + (y2 - y1)
+
+    if x2 <= x1 or y2 <= y1 or fx2 <= fx1 or fy2 <= fy1:
+        return background
+
+    roi = background[y1:y2, x1:x2]
+    fg_crop = foreground_rgba[fy1:fy2, fx1:fx2]
+
+    fg_rgb = fg_crop[:, :, :3]
+    alpha = (fg_crop[:, :, 3].astype(np.float32) / 255.0) * opacity
+    alpha_3c = np.repeat(alpha[:, :, np.newaxis], 3, axis=2)
+
+    background[y1:y2, x1:x2] = (fg_rgb * alpha_3c + roi * (1.0 - alpha_3c)).astype(np.uint8)
+    return background
+
+
 def _generate_live_frames(
     camera_idx: int = 0,
-    show_pose: bool = True,
-    show_face: bool = True,
-    show_hands: bool = True,
-    show_mask: bool = True,
+    show_char: bool = True,
+    char_mode: str = "FULL",
+    char_opacity: float = 1.0,
+    show_pose: bool = False,
+    show_face: bool = False,
+    show_hands: bool = False,
+    show_mask: bool = False,
     blur_bg: bool = False,
 ):
-    """Generator yielding MJPEG multipart frames from live webcam with AI vision overlays."""
+    """Generator yielding MJPEG multipart frames from live webcam with AI character overlays."""
     cap = cv2.VideoCapture(camera_idx, cv2.CAP_DSHOW)
     if not cap.isOpened():
         cap = cv2.VideoCapture(camera_idx)
 
     if not cap.isOpened():
-        # Yield single placeholder error frame
         blank = np.zeros((480, 640, 3), dtype=np.uint8)
         cv2.putText(blank, f"Could not open camera {camera_idx}", (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
         _, jpeg = cv2.imencode(".jpg", blank)
         yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n")
         return
+
+    # Load character RGBA
+    chars_dir = Path(__file__).resolve().parent.parent.parent / "characters"
+    char_path = chars_dir / "anime_girl_rgba.png"
+    if not char_path.exists():
+        char_path = chars_dir / "anime_girl_reference.png"
+
+    char_rgba = None
+    if char_path.exists():
+        loaded = cv2.imread(str(char_path), cv2.IMREAD_UNCHANGED)
+        if loaded is not None:
+            if len(loaded.shape) == 2:
+                char_rgba = cv2.cvtColor(loaded, cv2.COLOR_GRAY2BGRA)
+            elif loaded.shape[2] == 3:
+                gray = cv2.cvtColor(loaded, cv2.COLOR_BGR2GRAY)
+                alpha = np.where(gray > 15, 255, 0).astype(np.uint8)
+                char_rgba = cv2.cvtColor(loaded, cv2.COLOR_BGR2BGRA)
+                char_rgba[:, :, 3] = alpha
+            else:
+                char_rgba = loaded
 
     pose_est = get_pose_estimator()
     face_trk = get_face_tracker()
@@ -310,6 +364,10 @@ def _generate_live_frames(
     start_t = time.time()
     frames = 0
 
+    # Smoothing filters
+    sm_x, sm_y, sm_w, sm_h = None, None, None, None
+    alpha_filter = 0.45
+
     try:
         while True:
             ret, frame = cap.read()
@@ -321,16 +379,14 @@ def _generate_live_frames(
             h, w = frame.shape[:2]
             display = frame.copy()
 
-            # Pose
-            p_res = pose_est.estimate(frame) if show_pose else None
-            # Face
-            f_res = face_trk.track(frame) if show_face else None
-            # Hands
+            # Vision Tracking
+            p_res = pose_est.estimate(frame)
+            f_res = face_trk.track(frame)
             h_res = hand_trk.track(frame) if show_hands else None
 
-            # Segmentation (sampled)
+            # Segmentation (sampled for background blur or mask)
             now = time.time()
-            if (show_mask or blur_bg) and (cached_seg is None or (now - last_seg_time) > 0.08):
+            if (show_mask or blur_bg) and (cached_seg is None or (now - last_seg_time) > 0.09):
                 cached_seg = seg_mod.segment(frame)
                 last_seg_time = now
 
@@ -343,7 +399,60 @@ def _generate_live_frames(
                 bg = cv2.GaussianBlur(frame, (45, 45), 0)
                 display = (frame * a3 + bg * (1.0 - a3)).astype(np.uint8)
 
-            # Segmentation overlay
+            # Character Overlay Calculation
+            if show_char and char_rgba is not None:
+                target_bbox = None
+                if char_mode in ["FULL", "HOLOGRAM"]:
+                    if p_res and p_res.has_pose:
+                        cy = [lm.y * h for lm in p_res.landmarks if lm.visibility > 0.25]
+                        cx = [lm.x * w for lm in p_res.landmarks if lm.visibility > 0.25]
+                        if cx and cy:
+                            min_x, max_x = min(cx), max(cx)
+                            min_y, max_y = min(cy), max(cy)
+                            user_cx = (min_x + max_x) / 2.0
+                            pad_h = (max_y - min_y) * 0.12
+                            user_h = max(100.0, (max_y - min_y) + pad_h * 2)
+                            ch_h, ch_w = char_rgba.shape[:2]
+                            user_w = user_h * (ch_w / max(1, ch_h))
+                            target_bbox = (user_cx - user_w / 2.0, max(0.0, min_y - pad_h), user_w, user_h)
+
+                    elif f_res and f_res.has_face and f_res.bounding_box:
+                        bx1, by1, bx2, by2 = f_res.bounding_box
+                        face_w = (bx2 - bx1) * w
+                        face_h = (by2 - by1) * h
+                        face_cx = (bx1 + bx2) / 2.0 * w
+                        ch_h, ch_w = char_rgba.shape[:2]
+                        user_h = face_h * 3.8
+                        user_w = user_h * (ch_w / max(1, ch_h))
+                        target_bbox = (face_cx - user_w / 2.0, max(0.0, by1 * h - face_h * 0.25), user_w, user_h)
+
+                elif char_mode == "HEAD":
+                    if f_res and f_res.has_face and f_res.bounding_box:
+                        bx1, by1, bx2, by2 = f_res.bounding_box
+                        face_w = (bx2 - bx1) * w * 1.5
+                        face_h = (by2 - by1) * h * 1.5
+                        face_cx = (bx1 + bx2) / 2.0 * w
+                        face_cy = (by1 + by2) / 2.0 * h
+                        target_bbox = (face_cx - face_w / 2.0, face_cy - face_h / 2.0, face_w, face_h)
+
+                if target_bbox is not None:
+                    bx, by, bw, bh = target_bbox
+                    if sm_x is None:
+                        sm_x, sm_y, sm_w, sm_h = bx, by, bw, bh
+                    else:
+                        sm_x = (1.0 - alpha_filter) * sm_x + alpha_filter * bx
+                        sm_y = (1.0 - alpha_filter) * sm_y + alpha_filter * by
+                        sm_w = (1.0 - alpha_filter) * sm_w + alpha_filter * bw
+                        sm_h = (1.0 - alpha_filter) * sm_h + alpha_filter * bh
+
+                    tw, th = max(10, int(sm_w)), max(10, int(sm_h))
+                    tx, ty = int(sm_x), int(sm_y)
+
+                    scaled = cv2.resize(char_rgba, (tw, th), interpolation=cv2.INTER_LINEAR)
+                    eff_op = 0.55 if char_mode == "HOLOGRAM" else char_opacity
+                    _overlay_rgba(display, scaled, tx, ty, opacity=eff_op)
+
+            # Person mask overlay
             if show_mask and not blur_bg and cached_seg and cached_seg.binary_mask is not None:
                 mask = cached_seg.binary_mask
                 if mask.shape[:2] != (h, w):
@@ -351,8 +460,6 @@ def _generate_live_frames(
                 tint = np.zeros_like(display)
                 tint[:, :] = (255, 120, 0)
                 display = np.where(mask[:, :, np.newaxis] > 128, cv2.addWeighted(display, 0.7, tint, 0.3, 0), display)
-                cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                cv2.drawContours(display, cnts, -1, (0, 240, 255), 2)
 
             # Skeleton
             if show_pose and p_res and p_res.has_pose:
@@ -411,7 +518,7 @@ def _generate_live_frames(
                 frames = 0
                 start_t = time.time()
 
-            cv2.putText(display, f"REELMOTION AI LIVE | {fps:.1f} FPS", (16, 32), cv2.FONT_HERSHEY_DUPLEX, 0.65, (0, 240, 255), 1)
+            cv2.putText(display, f"REELMOTION AI | {fps:.1f} FPS | CHAR: {'ON' if show_char else 'OFF'}", (16, 32), cv2.FONT_HERSHEY_DUPLEX, 0.60, (0, 240, 255), 1)
 
             ret_enc, jpeg = cv2.imencode(".jpg", display, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
             if ret_enc:
@@ -423,16 +530,22 @@ def _generate_live_frames(
 @router.get("/stream")
 def live_stream(
     camera: int = Query(default=0, ge=0),
-    pose: bool = Query(default=True),
-    face: bool = Query(default=True),
-    hands: bool = Query(default=True),
-    mask: bool = Query(default=True),
+    char: bool = Query(default=True),
+    mode: str = Query(default="FULL"),
+    opacity: float = Query(default=1.0, ge=0.1, le=1.0),
+    pose: bool = Query(default=False),
+    face: bool = Query(default=False),
+    hands: bool = Query(default=False),
+    mask: bool = Query(default=False),
     blur: bool = Query(default=False),
 ) -> StreamingResponse:
-    """Stream live webcam video with real-time AI vision tracking overlays."""
+    """Stream live webcam video with real-time AI character and vision tracking overlays."""
     return StreamingResponse(
         _generate_live_frames(
             camera_idx=camera,
+            show_char=char,
+            char_mode=mode,
+            char_opacity=opacity,
             show_pose=pose,
             show_face=face,
             show_hands=hands,
@@ -445,13 +558,13 @@ def live_stream(
 
 @router.get("/live", response_class=HTMLResponse)
 def live_viewer_page() -> str:
-    """Return dark-mode interactive Live Vision Studio HTML web interface."""
+    """Return dark-mode interactive Live Character Studio HTML web interface."""
     return """
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ReelMotion AI — Live Vision Camera Studio</title>
+  <title>ReelMotion AI — Live Character Studio</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -466,7 +579,7 @@ def live_viewer_page() -> str:
     header {
       background: #151824;
       border-bottom: 1px solid #242938;
-      padding: 14px 24px;
+      padding: 12px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -489,14 +602,15 @@ def live_viewer_page() -> str:
     h1 { font-size: 18px; font-weight: 600; color: #f8fafc; }
     .controls {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
+      flex-wrap: wrap;
     }
     .btn {
       background: #1e2436;
       border: 1px solid #333b54;
       color: #cbd5e1;
-      padding: 8px 16px;
+      padding: 7px 14px;
       border-radius: 6px;
       font-size: 13px;
       font-weight: 500;
@@ -508,9 +622,16 @@ def live_viewer_page() -> str:
     }
     .btn:hover { background: #2a334d; color: #fff; border-color: #00f0ff; }
     .btn.active {
-      background: rgba(0, 240, 255, 0.15);
+      background: rgba(0, 240, 255, 0.18);
       border-color: #00f0ff;
       color: #00f0ff;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, #00f0ff, #0077ff);
+      color: #000;
+      font-weight: 700;
+      border: none;
     }
     .main-view {
       flex: 1;
@@ -527,13 +648,13 @@ def live_viewer_page() -> str:
       max-height: 100%;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(0, 240, 255, 0.2);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 24px rgba(0, 240, 255, 0.25);
       border: 1px solid #22293d;
     }
     img.live-stream {
       display: block;
       width: 100%;
-      height: 100%;
+      max-height: 82vh;
       object-fit: contain;
       border-radius: 12px;
     }
@@ -551,35 +672,53 @@ def live_viewer_page() -> str:
 <body>
   <header>
     <div class="brand">
-      <span class="badge">LIVE</span>
-      <h1>ReelMotion AI — Camera Vision Studio</h1>
+      <span class="badge">LIVE AR</span>
+      <h1>ReelMotion AI — Character Studio</h1>
     </div>
     <div class="controls">
-      <button class="btn active" id="btn-pose" onclick="toggleParam('pose')">Pose Skeleton</button>
-      <button class="btn active" id="btn-face" onclick="toggleParam('face')">Face Mesh & Blink</button>
-      <button class="btn active" id="btn-hands" onclick="toggleParam('hands')">Hand Tracking</button>
-      <button class="btn active" id="btn-mask" onclick="toggleParam('mask')">Person Mask</button>
+      <button class="btn active" id="btn-char" onclick="toggleParam('char')">🎭 Character: ON</button>
+      <button class="btn active" id="btn-mode" onclick="cycleMode()">Mode: FULL</button>
+      <button class="btn" id="btn-opacity" onclick="cycleOpacity()">Opacity: 100%</button>
       <button class="btn" id="btn-blur" onclick="toggleParam('blur')">Background Blur</button>
+      <button class="btn" id="btn-pose" onclick="toggleParam('pose')">Pose Skeleton</button>
+      <button class="btn" id="btn-face" onclick="toggleParam('face')">Face Mesh</button>
     </div>
   </header>
 
   <main class="main-view">
     <div class="video-container">
-      <img id="stream" class="live-stream" src="/api/vision/stream?pose=1&face=1&hands=1&mask=1&blur=0" alt="Live Camera Vision Stream" />
+      <img id="stream" class="live-stream" src="/api/vision/stream?char=1&mode=FULL&opacity=1.0&pose=0&face=0&hands=0&mask=0&blur=0" alt="Live Character Video Stream" />
     </div>
   </main>
 
   <footer>
-    <div>Tracking: 33 Pose Joints, 478 Face Mesh Points, 21 Hand Landmarks, Neural Segmentation</div>
-    <div>Local GPU Inference & Real-time Vision Engine</div>
+    <div>Model: Anime Girl Reference | Live Motion Tracking & AR Overlay (30 FPS)</div>
+    <div>Local GPU Inference Engine</div>
   </footer>
 
   <script>
-    const state = { pose: true, face: true, hands: true, mask: true, blur: false };
+    const state = {
+      char: true,
+      mode: 'FULL',
+      opacity: 1.0,
+      pose: false,
+      face: false,
+      hands: false,
+      mask: false,
+      blur: false
+    };
+
+    const modes = ['FULL', 'HOLOGRAM', 'HEAD'];
+    let modeIdx = 0;
+    const opacities = [1.0, 0.8, 0.6, 0.4];
+    let opIdx = 0;
 
     function updateStream() {
       const img = document.getElementById('stream');
       const q = new URLSearchParams({
+        char: state.char ? '1' : '0',
+        mode: state.mode,
+        opacity: state.opacity.toFixed(1),
         pose: state.pose ? '1' : '0',
         face: state.face ? '1' : '0',
         hands: state.hands ? '1' : '0',
@@ -596,7 +735,26 @@ def live_viewer_page() -> str:
       if (btn) {
         if (state[name]) btn.classList.add('active');
         else btn.classList.remove('active');
+        if (name === 'char') {
+          btn.textContent = '🎭 Character: ' + (state.char ? 'ON' : 'OFF');
+        }
       }
+      updateStream();
+    }
+
+    function cycleMode() {
+      modeIdx = (modeIdx + 1) % modes.length;
+      state.mode = modes[modeIdx];
+      const btn = document.getElementById('btn-mode');
+      if (btn) btn.textContent = 'Mode: ' + state.mode;
+      updateStream();
+    }
+
+    function cycleOpacity() {
+      opIdx = (opIdx + 1) % opacities.length;
+      state.opacity = opacities[opIdx];
+      const btn = document.getElementById('btn-opacity');
+      if (btn) btn.textContent = 'Opacity: ' + Math.round(state.opacity * 100) + '%';
       updateStream();
     }
   </script>
