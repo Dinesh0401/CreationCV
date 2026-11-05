@@ -7,9 +7,22 @@ composites onto original beach background, and exports MP4 video and verificatio
 
 from __future__ import annotations
 
+import os
+
+# Windows zero-pagefile commit protection: monkey-patch safetensors to use 'pread' instead of 'mmap'
+import safetensors
+import safetensors.torch
+
+_orig_safe_open = safetensors.safe_open
+
+def _patched_safe_open(filename, framework="pt", device="cpu", backend="pread" if os.name == "nt" else "mmap"):
+    return _orig_safe_open(filename, framework=framework, device=device, backend=backend)
+
+safetensors.safe_open = _patched_safe_open
+safetensors.torch.safe_open = _patched_safe_open
+
 import gc
 import json
-import os
 import sys
 import time
 from pathlib import Path
